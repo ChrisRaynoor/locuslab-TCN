@@ -4,6 +4,7 @@ from torch.nn.utils import weight_norm
 
 
 class Chomp1d(nn.Module):
+    """Chomp the tail of output, since Conv1d padding applies to both side."""
     def __init__(self, chomp_size):
         super(Chomp1d, self).__init__()
         self.chomp_size = chomp_size
@@ -29,7 +30,7 @@ class TemporalBlock(nn.Module):
 
         self.net = nn.Sequential(self.conv1, self.chomp1, self.relu1, self.dropout1,
                                  self.conv2, self.chomp2, self.relu2, self.dropout2)
-        self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if n_inputs != n_outputs else None
+        self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if n_inputs != n_outputs else None  # additional 1*1 conv if input and ouput with different width
         self.relu = nn.ReLU()
         self.init_weights()
 
@@ -47,6 +48,11 @@ class TemporalBlock(nn.Module):
 
 class TemporalConvNet(nn.Module):
     def __init__(self, num_inputs, num_channels, kernel_size=2, dropout=0.2):
+        """
+        Args:
+            num_inputs: in_channels (width) of input
+            num_channels: array-like with length of # layers. starts with first layer's # out_channels
+        """
         super(TemporalConvNet, self).__init__()
         layers = []
         num_levels = len(num_channels)
